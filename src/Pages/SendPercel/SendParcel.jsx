@@ -4,12 +4,13 @@ import Swal from "sweetalert2";
 import "react-toastify/dist/ReactToastify.css";
 import { useLoaderData, useNavigate } from "react-router-dom";
 import useAuth from "../../hooks/useAuth";
-
+import useAxiosSecure from "../../hooks/useAxiosSecure";
 
 const SendParcel = () => {
   const navigate = useNavigate();
-  let {user}=useAuth()
- let warehouses=useLoaderData()
+  let { user } = useAuth();
+  let warehouses = useLoaderData();
+  let axiosSecure = useAxiosSecure();
   const {
     register,
     handleSubmit,
@@ -24,16 +25,18 @@ const SendParcel = () => {
   const regions = [...new Set(warehouses.map((w) => w.region))];
 
   const getDistrictsByRegion = (region) => {
-    return [...new Set(
-      warehouses.filter((w) => w.region === region).map((w) => w.district)
-    )].sort();
+    return [
+      ...new Set(
+        warehouses.filter((w) => w.region === region).map((w) => w.district)
+      ),
+    ].sort();
   };
 
   const senderDistricts = getDistrictsByRegion(senderRegion);
   const receiverDistricts = getDistrictsByRegion(receiverRegion);
 
   const generateTrackingId = () => {
-    return 'TRK' + Math.random().toString(36).substr(2, 9).toUpperCase();
+    return "TRK" + Math.random().toString(36).substr(2, 9).toUpperCase();
   };
 
   const onSubmit = (data) => {
@@ -45,21 +48,28 @@ const SendParcel = () => {
 
     if (data.type === "document") {
       deliveryCost = sameDistrict ? 60 : 80;
-      breakdown = `Parcel Type: Document<br/>Rate: ৳${deliveryCost} (${sameDistrict ? "Within City" : "Outside City"})`;
+      breakdown = `Parcel Type: Document<br/>Rate: ৳${deliveryCost} (${
+        sameDistrict ? "Within City" : "Outside City"
+      })`;
     } else if (data.type === "non-document") {
       if (weight <= 3) {
         deliveryCost = sameDistrict ? 110 : 150;
-        breakdown = `Parcel Type: Non-Document<br/>Weight: ${weight}kg<br/>Rate: ৳${deliveryCost} (${sameDistrict ? "Within City" : "Outside City"})`;
+        breakdown = `Parcel Type: Non-Document<br/>Weight: ${weight}kg<br/>Rate: ৳${deliveryCost} (${
+          sameDistrict ? "Within City" : "Outside City"
+        })`;
       } else {
         const extraKg = weight - 3;
         const extraCharge = extraKg * 40;
         deliveryCost = sameDistrict
           ? 110 + extraCharge
           : 150 + extraCharge + 40;
-        breakdown = `Parcel Type: Non-Document<br/>Weight: ${weight}kg<br/>Base Rate: ৳${sameDistrict ? 110 : 150}<br/>Extra Weight (${extraKg.toFixed(1)}kg): ৳${extraCharge}<br/>${sameDistrict ? "" : "Additional Charge: ৳40<br/>"}`;
+        breakdown = `Parcel Type: Non-Document<br/>Weight: ${weight}kg<br/>Base Rate: ৳${
+          sameDistrict ? 110 : 150
+        }<br/>Extra Weight (${extraKg.toFixed(1)}kg): ৳${extraCharge}<br/>${
+          sameDistrict ? "" : "Additional Charge: ৳40<br/>"
+        }`;
       }
     }
-    
 
     Swal.fire({
       title: "Confirm Delivery Cost",
@@ -71,10 +81,12 @@ const SendParcel = () => {
     }).then((result) => {
       if (result.isConfirmed) {
         const now = new Date();
-        const parcel = {
+        const parcelData = {
           ...data,
           creation_date: now.toISOString(),
-          createdAtFormatted: now.toLocaleString("en-GB", { timeZone: "Asia/Dhaka" }),
+          createdAtFormatted: now.toLocaleString("en-GB", {
+            timeZone: "Asia/Dhaka",
+          }),
           deliveryCost,
           userEmail: user?.email || "unknown",
           createdBy: user?.displayName || "anonymous",
@@ -82,13 +94,20 @@ const SendParcel = () => {
           trackingId: generateTrackingId(),
         };
 
-        console.log("Parcel Saved:", parcel);
+        console.log("Parcel Saved:", parcelData);
 
-        Swal.fire({
-          icon: "success",
-          title: "Parcel saved successfully!",
-          showConfirmButton: false,
-          timer: 1500,
+        //save data to the server
+        axiosSecure.post("/parcels", parcelData).then((res) => {
+          console.log(res.data);
+          if (res.data.insertedId) {
+            Swal.fire({
+                //redirect to the payment page
+              icon: "success",
+              title: "Parcel saved successfully!",
+              showConfirmButton: false,
+              timer: 1500,
+            });
+          }
         });
 
         //reset();
@@ -99,8 +118,12 @@ const SendParcel = () => {
 
   return (
     <div className="max-w-6xl mx-auto p-6">
-      <h1 className="text-3xl font-bold text-center text-blue-600">Send Your Parcel</h1>
-      <p className="text-center text-gray-500 mb-6">Door to Door Pickup & Delivery</p>
+      <h1 className="text-3xl font-bold text-center text-blue-600">
+        Send Your Parcel
+      </h1>
+      <p className="text-center text-gray-500 mb-6">
+        Door to Door Pickup & Delivery
+      </p>
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
         {/* Parcel Info */}
@@ -152,7 +175,9 @@ const SendParcel = () => {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Sender Info */}
           <div className="border p-4 rounded-xl">
-            <h2 className="text-lg font-bold mb-4 text-gray-700">Sender Info</h2>
+            <h2 className="text-lg font-bold mb-4 text-gray-700">
+              Sender Info
+            </h2>
             <div className="flex flex-col gap-3">
               <input
                 defaultValue={user?.displayName || "Logged-in User"}
@@ -198,7 +223,9 @@ const SendParcel = () => {
 
           {/* Receiver Info */}
           <div className="border p-4 rounded-xl">
-            <h2 className="text-lg font-bold mb-4 text-gray-700">Receiver Info</h2>
+            <h2 className="text-lg font-bold mb-4 text-gray-700">
+              Receiver Info
+            </h2>
             <div className="flex flex-col gap-3">
               <input
                 {...register("receiverName", { required: true })}
@@ -244,7 +271,9 @@ const SendParcel = () => {
         </div>
 
         <div className="text-center">
-          <button type="submit" className="btn btn-primary">Submit Parcel</button>
+          <button type="submit" className="btn btn-primary">
+            Submit Parcel
+          </button>
         </div>
       </form>
     </div>

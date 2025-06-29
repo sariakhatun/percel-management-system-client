@@ -11,6 +11,8 @@ import Coverage from "../Pages/Coverage/Coverage";
 import PrivateRoute from "../routes/PrivateRoute";
 import SendParcel from "../Pages/SendPercel/SendParcel";
 import About from "../Pages/About/About";
+import DashboardLayout from "../Layouts/DashboardLayout";
+import MyParcels from "../Pages/Dashboard/MyParcels";
 export const router = createBrowserRouter([
   {
     path: "/",
@@ -39,6 +41,7 @@ export const router = createBrowserRouter([
          loader: ()=>fetch('./serviceCenter.json')
         
       },
+      
     ]
   },
   {
@@ -55,5 +58,19 @@ export const router = createBrowserRouter([
       },
       
     ]
-  }
+  },
+  {
+        path:'/dashboard',
+        element:<PrivateRoute>
+          <DashboardLayout></DashboardLayout>
+        </PrivateRoute>,
+        children:[
+          {
+            path:'myParcels',
+            element:<MyParcels></MyParcels>
+          }
+        ]
+        
+      },
+      
 ]);
