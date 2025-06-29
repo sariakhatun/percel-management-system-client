@@ -1,30 +1,46 @@
 import React from "react";
-import { NavLink } from "react-router";
-import logo from '../../assets/logo.png'
+import { Link, NavLink } from "react-router";
+import logo from "../../assets/logo.png";
 import Profast from "../Profast/Profast";
 import useAuth from "../../hooks/useAuth";
+import Swal from "sweetalert2";
 
 const Navbar = () => {
-  let {logOut}=useAuth()
-  let handleLogOut=()=>{
+  let { logOut, user } = useAuth();
+  let handleLogOut = () => {
     logOut()
-    .then(()=>{
-      console.log('user logged out')
-    })
-    .catch(error=>{
-      console.log(error)
-    })
-  }
-    let navItems = <>
-        
-        <li><NavLink to='/'>Home</NavLink></li>
-        <li><NavLink to='/about'>About</NavLink></li> 
-         
-        <li><NavLink to='/coverage'>Track Order</NavLink></li> 
-         
-         
-         
+      .then(() => {
+        console.log("user logged out");
+        Swal.fire({
+          position: "top-end",
+          icon: "success",
+          title: "Logged Out Successfully",
+          showConfirmButton: false,
+          timer: 1500,
+        });
+      })
+      .catch((error) => {
+        console.log(error);
+      });
+  };
+  let navItems = (
+    <>
+      <li>
+        <NavLink to="/">Home</NavLink>
+      </li>
+      <li>
+        <NavLink to="/about">About</NavLink>
+      </li>
+
+      <li>
+        <NavLink to="/coverage">Track Order</NavLink>
+      </li>
+     
+      <li>
+        <NavLink to="/sendParcel">Send A Parcel</NavLink>
+      </li>
     </>
+  );
   return (
     <div className="navbar bg-base-100 shadow-sm">
       <div className="navbar-start">
@@ -50,23 +66,29 @@ const Navbar = () => {
             tabIndex={0}
             className="menu menu-sm dropdown-content bg-base-100 rounded-box z-1 mt-3 w-52 p-2 shadow"
           >
-            
-            {
-                navItems
-            }
+            {navItems}
           </ul>
         </div>
-       <Profast></Profast>
+        <Profast></Profast>
       </div>
       <div className="navbar-center hidden lg:flex">
-        <ul className="menu menu-horizontal px-1">
-         {
-            navItems
-         }
-        </ul>
+        <ul className="menu menu-horizontal px-1">{navItems}</ul>
       </div>
       <div className="navbar-end">
-        <a onClick={handleLogOut} className="btn">Logout</a>
+        {user ? (
+          <Link onClick={handleLogOut} className="btn bg-[#CAEB66]">
+            Logout
+          </Link>
+        ) : (
+          <div className="flex gap-2">
+            <Link to="/login" className="btn bg-[#CAEB66]">
+              Sign In
+            </Link>
+            <Link to="/register" className="btn bg-[#CAEB66]">
+              Sign Up
+            </Link>
+          </div>
+        )}
       </div>
     </div>
   );
